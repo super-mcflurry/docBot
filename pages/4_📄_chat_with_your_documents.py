@@ -2,28 +2,32 @@ import os
 import utils
 import streamlit as st
 from streaming import StreamHandler
+from dotenv import load_dotenv
 
-from langchain.chat_models import ChatOpenAI
 from langchain.document_loaders import PyPDFLoader
 from langchain.memory import ConversationBufferMemory
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.chains import ConversationalRetrievalChain
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains import ConversationalRetrievalChain
 from langchain.vectorstores import DocArrayInMemorySearch
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+
+from langchain.chat_models import ChatOpenAI
+from langchain.llms import HuggingFaceHub
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain.embeddings import OpenAIEmbeddings,  HuggingFaceEmbeddings 
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+
+
+from streamlit_mic_recorder import speech_to_text
 
 st.set_page_config(page_title="ChatPDF", page_icon="📄")
 st.header('Chat with your documents')
-st.write('Has access to custom documents and can respond to user queries by referring to the content within those documents')
-st.write('[![view source code ](https://img.shields.io/badge/view_source_code-gray?logo=github)](https://github.com/shashankdeshpande/langchain-chatbot/blob/master/pages/4_%F0%9F%93%84_chat_with_your_documents.py)')
 
-class CustomDataChatbot:
+class Chatbot:
 
-    def __init__(self):
-        utils.configure_openai_api_key()
-        self.openai_model = "gpt-3.5-turbo"
-
-    def save_file(self, file):
-        folder = 'tmp'
+    def download_file(self,file):
+        folder = "downloads"
         if not os.path.exists(folder):
             os.makedirs(folder)
         
@@ -31,58 +35,86 @@ class CustomDataChatbot:
         with open(file_path, 'wb') as f:
             f.write(file.getvalue())
         return file_path
-
-    @st.spinner('Analyzing documents..')
-    def setup_qa_chain(self, uploaded_files):
-        # Load documents
+    
+    def get_text(self, uploaded_files):
         docs = []
         for file in uploaded_files:
-            file_path = self.save_file(file)
-            loader = PyPDFLoader(file_path)
-            docs.extend(loader.load())
-        
-        # Split documents
+            file_path = self.download_file(file)
+            pdf_loader = PyPDFLoader(file_path)
+            docs.extend(pdf_loader.load())
+        return docs
+
+    def split_text(self, file):
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1500,
             chunk_overlap=200
         )
-        splits = text_splitter.split_documents(docs)
+        chunks = text_splitter.split_documents(file)
+        return chunks
+    
+    def embeddings_vectorstore(self, chunks):
+       embeddings = OpenAIEmbeddings()
+       # embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+       # embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
-        # Create embeddings and store in vectordb
-        embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-        vectordb = DocArrayInMemorySearch.from_documents(splits, embeddings)
+       vectorstore = DocArrayInMemorySearch.from_documents(chunks, embeddings)
+       return vectorstore
+       
+    def conversation_chain(self,vectorstore):
 
-        # Define retriever
-        retriever = vectordb.as_retriever(
-            search_type='mmr',
-            search_kwargs={'k':2, 'fetch_k':4}
-        )
-
-        # Setup memory for contextual conversation        
         memory = ConversationBufferMemory(
             memory_key='chat_history',
             return_messages=True
         )
 
-        # Setup LLM and QA chain
-        llm = ChatOpenAI(model_name=self.openai_model, temperature=0, streaming=True)
-        qa_chain = ConversationalRetrievalChain.from_llm(llm, retriever=retriever, memory=memory, verbose=True)
-        return qa_chain
+        retriever = vectorstore.as_retriever(
+            search_type='mmr',
+            search_kwargs={'k':2, 'fetch_k':4}
+        )
+        
+        llm = ChatOpenAI(model_name="gpt-3.5-turbo-1106", streaming=True)
+        # llm = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0.7,convert_system_message_to_human=True)
+        # llm = HuggingFaceHub(repo_id="google/flan-t5-xxl", model_kwargs={"temperature":0.5, "max_length":512})
+ 
+        chain = ConversationalRetrievalChain.from_llm(llm, retriever=retriever, memory=memory, verbose=True)
 
+        return chain
+    
     @utils.enable_chat_history
     def main(self):
-
-        # User Inputs
-        uploaded_files = st.sidebar.file_uploader(label='Upload PDF files', type=['pdf'], accept_multiple_files=True)
+        load_dotenv()
+        with st.sidebar:
+            st.subheader("Upload your Documents")
+            uploaded_files = st.file_uploader(label='Upload PDF files', type=['pdf'], accept_multiple_files=True)
         if not uploaded_files:
             st.error("Please upload PDF documents to continue!")
             st.stop()
 
-        user_query = st.chat_input(placeholder="Ask me anything!")
+        # Chatbot
+        if uploaded_files:
+            with st.spinner("Processing"):
+                docs = self.get_text(uploaded_files)
+                chunks = self.split_text(docs)
+                vectorstore = self.embeddings_vectorstore(chunks)
+                qa_chain = self.conversation_chain(vectorstore)
 
-        if uploaded_files and user_query:
-            qa_chain = self.setup_qa_chain(uploaded_files)
+        # Display chat input
+        user_query = st.chat_input(placeholder="Ask me anything!", key="user_input")
 
+        # Speech-to-Text
+        c1, c2 = st.columns(2)
+        with c1:
+            st.write("Convert speech to text:")
+        with c2:
+            text = speech_to_text(language='en', use_container_width=True, just_once=True, key='STT')
+
+        # Update chat input with the latest speech-to-text result
+        st.session_state.text_received = text
+
+        if text:
+            user_query = text
+
+        if user_query:
             utils.display_msg(user_query, 'user')
 
             with st.chat_message("assistant"):
@@ -91,5 +123,5 @@ class CustomDataChatbot:
                 st.session_state.messages.append({"role": "assistant", "content": response})
 
 if __name__ == "__main__":
-    obj = CustomDataChatbot()
+    obj = Chatbot()
     obj.main()
