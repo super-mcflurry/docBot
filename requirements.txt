@@ -1,4 +1,5 @@
-cython
+os
+utils
 streamlit
 streaming
 langchain
@@ -9,3 +10,5 @@ streamlit_mic_recorder
 python-dotenv
 tiktoken
 docarray
+rapidocr-onnxruntime
+chromadb
