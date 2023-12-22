@@ -12,3 +12,6 @@ tiktoken
 docarray
 rapidocr-onnxruntime
 chromadb
+python-docx
+langchain_experimental
+tabulate
