@@ -1,57 +1,65 @@
-import utils
 import streamlit as st
-
-from langchain.agents import AgentType
+from dotenv import load_dotenv
+from langchain.agents.agent_types import AgentType
 from langchain.chat_models import ChatOpenAI
-from langchain.tools import DuckDuckGoSearchRun
-from langchain.agents import initialize_agent, Tool
-from langchain.callbacks import StreamlitCallbackHandler
+from langchain.llms import OpenAI
+from langchain_experimental.agents.agent_toolkits import create_csv_agent
 
-st.set_page_config(page_title="ChatWeb", page_icon="🌐")
-st.header('Chatbot with Internet Access')
-st.write('Equipped with internet access, enables users to ask questions about recent events')
-st.write('[![view source code ](https://img.shields.io/badge/view_source_code-gray?logo=github)](https://github.com/shashankdeshpande/langchain-chatbot/blob/master/pages/3_%F0%9F%8C%90_chatbot_with_internet_access.py)')
+from streamlit_mic_recorder import speech_to_text
 
-class ChatbotTools:
 
-    def __init__(self):
-        utils.configure_openai_api_key()
-        self.openai_model = "gpt-3.5-turbo"
+def answer_query(query):
+    response = st.session_state.conversation({'question': query})
+    return response['answer']
 
-    def setup_agent(self):
-        # Define tool
-        ddg_search = DuckDuckGoSearchRun()
-        tools = [
-            Tool(
-                name="DuckDuckGoSearch",
-                func=ddg_search.run,
-                description="Useful for when you need to answer questions about current events. You should ask targeted questions",
-            )
-        ]
 
-        # Setup LLM and Agent
-        llm = ChatOpenAI(model_name=self.openai_model, streaming=True)
-        agent = initialize_agent(
-            tools=tools,
-            llm=llm,
-            agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-            handle_parsing_errors=True,
-            verbose=True
-        )
-        return agent
+def main():
+    load_dotenv()
 
-    @utils.enable_chat_history
-    def main(self):
-        agent = self.setup_agent()
-        user_query = st.chat_input(placeholder="Ask me anything!")
-        if user_query:
-            utils.display_msg(user_query, 'user')
-            with st.chat_message("assistant"):
-                st_cb = StreamlitCallbackHandler(st.container())
-                response = agent.run(user_query, callbacks=[st_cb])
-                st.session_state.messages.append({"role": "assistant", "content": response})
-                st.write(response)
+    st.set_page_config(page_title="DocBot", page_icon=":robot_face:", layout="wide")
+    st.header("Docbot - Chat with your DataSet")
+       
+    if "conversation" not in st.session_state:
+        st.session_state.conversation = None
 
-if __name__ == "__main__":
-    obj = ChatbotTools()
-    obj.main()
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = None
+ 
+    # to show chat history on ui
+    if "messages" not in st.session_state:
+        st.session_state["messages"] = [{"role": "assistant", "content": "How can I help you?"}]
+        
+    for msg in st.session_state["messages"]:
+        st.chat_message(msg["role"]).write(msg["content"])
+   
+     # Display chat input
+    user_query = st.chat_input(placeholder="Ask me anything!", key="user_input")
+    text = speech_to_text(language='en', use_container_width=True, just_once=True, key='STT')
+
+    if text:
+       user_query = text
+
+    with st.sidebar:
+        st.subheader("Upload your Documents")
+        csv_files = st.file_uploader(label='Upload CSV files', type=['csv'], accept_multiple_files=True)
+        
+        if csv_files:
+                agent = create_csv_agent(ChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613"),
+                                         csv_files,
+                                         verbose=True,
+                                         agent_type=AgentType.OPENAI_FUNCTIONS,
+                                         handle_parsing_errors=True
+                                        )
+
+    if user_query:
+       st.chat_message("user").write(user_query)
+       st.session_state.messages.append({"role": "user", "content": user_query})
+       response = agent.run(user_query)
+       st.session_state.messages.append({"role": "assistant", "content": response})
+       st.chat_message("assistant").write(response)
+        
+
+if __name__ == '__main__':
+    main()
+
+
