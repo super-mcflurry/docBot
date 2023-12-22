@@ -5,7 +5,10 @@ import streamlit as st
 from streaming import StreamHandler
 from dotenv import load_dotenv
 
+from docx import Document
 from langchain.document_loaders import PyPDFLoader
+from langchain.document_loaders import Docx2txtLoader
+from langchain.document_loaders import TextLoader
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -22,6 +25,7 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 from streamlit_mic_recorder import speech_to_text
 
+docs = []
 
 #Extracts the text from the document
 def download_file(file):
@@ -34,13 +38,29 @@ def download_file(file):
         f.write(file.getvalue())
     return file_path
 
+
 def get_text(uploaded_files):
-    docs = []
     for file in uploaded_files:
         file_path = download_file(file)
-        pdf_loader = PyPDFLoader(file_path, extract_images=True)
-        docs.extend(pdf_loader.load())
-    return docs
+        if file.name.endswith('.pdf'):
+            pdfReader(file_path)
+        elif file.name.endswith('.docx'):
+            docxReader(file_path)
+        elif file.name.endswith('.txt'):
+            txtReader(file_path)
+    
+
+def pdfReader(file_path):
+    pdf_loader = PyPDFLoader(file_path, extract_images=True)
+    docs.extend(pdf_loader.load())
+
+def docxReader(file_path):
+    doc = Docx2txtLoader(file_path)
+    docs.append(doc.load())
+
+def txtReader(file_path):
+    txt = TextLoader(file_path)
+    docs.append(txt.load())
 
 #Splits the text into chunks
 def split_text(file):
@@ -75,9 +95,9 @@ def conversation_chain(vectorstore):
         search_kwargs={'k':2, 'fetch_k':4}
     )
     
-    #llm = ChatOpenAI(model_name="gpt-3.5-turbo-1106", streaming=True)
+    llm = ChatOpenAI(model_name="gpt-3.5-turbo-1106", streaming=True)
     # llm = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0.7,convert_system_message_to_human=True)
-    llm = HuggingFaceHub(repo_id="google/flan-t5-xxl", model_kwargs={"temperature":0.5, "max_length":512})
+    #llm = HuggingFaceHub(repo_id="google/flan-t5-xxl", model_kwargs={"temperature":0.5, "max_length":512})
 
     chain = ConversationalRetrievalChain.from_llm(llm, retriever=retriever, memory=memory, verbose=True)
 
@@ -85,8 +105,6 @@ def conversation_chain(vectorstore):
 
 def answer_query(query):
     response = st.session_state.conversation({'question': query})
-    st.session_state.chat_history = response['chat_history']
-
     return response['answer']
 
 
@@ -111,35 +129,30 @@ def main():
    
      # Display chat input
     user_query = st.chat_input(placeholder="Ask me anything!", key="user_input")
+    text = speech_to_text(language='en', use_container_width=True, just_once=True, key='STT')
 
-    # Speech-to-Text
-    # c1, c2 = st.columns(2)
-    # with c1:
-       #st.write("Convert speech to text:")
-    #with c2:
-        #text = speech_to_text(language='en', use_container_width=True, just_once=True, key='STT')
-
-    #if text:
-       # user_query = text
+    if text:
+       user_query = text
 
     if user_query:
        st.chat_message("user").write(user_query)
+       st.session_state.messages.append({"role": "user", "content": user_query})
        response = answer_query(user_query)
+       st.session_state.messages.append({"role": "assistant", "content": response})
        st.chat_message("assistant").write(response)
         
     with st.sidebar:
         st.subheader("Upload your Documents")
-        uploaded_files = st.file_uploader(label='Upload PDF files', type=['pdf'], accept_multiple_files=True)
+        uploaded_files = st.file_uploader(label='Upload PDF files', type=['pdf','docx','txt'], accept_multiple_files=True)
         button = st.button("Process")
         
         if button:
             with st.spinner("Processing"):
-                docs = get_text(uploaded_files)
+                get_text(uploaded_files)
                 chunks = split_text(docs)
                 vectorstore = embeddings_vectorstore(chunks)
                 st.session_state.conversation = conversation_chain(vectorstore)
+                st.success("Done!")
 
 if __name__ == '__main__':
     main()
-
-
