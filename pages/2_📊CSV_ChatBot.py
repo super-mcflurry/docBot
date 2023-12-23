@@ -54,11 +54,10 @@ def main():
         st.sidebar.button('Clear Chat History', on_click=clear_chat_history) 
         
     user_query = st.chat_input(placeholder="Ask me anything!", key="user_input")
-    voice = speech_to_text(language='en', just_once=True, key='STT')
 
     if voice:
        user_query = voice
-       
+
     if user_query:
        st.chat_message("user").write(user_query)
        st.session_state.messages.append({"role": "user", "content": user_query})
