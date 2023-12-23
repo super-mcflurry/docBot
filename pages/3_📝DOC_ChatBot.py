@@ -14,12 +14,14 @@ from langchain.vectorstores import Chroma
 from langchain.llms import GooglePalm
 
 from langchain.llms import Replicate
-from langchain.llms import OpenAI
+from langchain.chat_models import ChatOpenAI
 from langchain.llms import HuggingFaceHub
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.embeddings import HuggingFaceEmbeddings 
 
 from streamlit_mic_recorder import speech_to_text
+import openai
+import time 
 
 docs = []
 
@@ -91,7 +93,7 @@ def conversation_chain(vectorstore,selected_model):
     )
 
     if selected_model == 'ChatGPT-3.5':
-        llm = OpenAI(model_name="gpt-3.5-turbo-1106",temperature=0.5, streaming=True)
+        llm = ChatOpenAI(model_name="gpt-3.5-turbo-1106",temperature=0.5, streaming=True)
     elif selected_model == 'Gemini-Pro':
          llm = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0.7,convert_system_message_to_human=True)
     elif selected_model == 'Llama2-70B':
@@ -132,11 +134,16 @@ def check_internet_connection():
         pass
     return False
 
+def text_to_speech(speech_file_path,text):
+    response = openai.audio.speech.create(model="tts-1-hd",voice="shimmer",input=text)
+    response.stream_to_file(speech_file_path)
 
 
 def main():
-    fileUploaded = False
     load_dotenv()
+
+    timestamp = int(time.time())
+    speech_file_path = f'audio_response_{timestamp}.mp3'
 
     st.set_page_config(page_title="DocBot", page_icon=":robot_face:")
     st.header("📝Chat with Your Documents")
@@ -169,17 +176,18 @@ def main():
                     vectorstore = embeddings_vectorstore(chunks)
                     st.session_state.conversation = conversation_chain(vectorstore,selected_model)
                     st.success("Done!")
-                    fileUploaded = True
+        
        
         st.subheader("Speech to Text🎙️")    
         voice = speech_to_text(language='en', use_container_width=True, just_once=True, key='STT')
 
+        st.subheader("Voice Output")        
+        voiceSelection = st.sidebar.selectbox('Speech Settings', ['No', 'Yes'], key='voiceSelection')    
+
         st.sidebar.button('Clear Chat History', on_click=clear_chat_history) 
 
 
-    #To enable and disable chat_input based on file upload
-    placeholderText = "Please upload a document and click the \"Process\" button!" if not fileUploaded else "Ask me anything!"
-    user_query = st.chat_input(disabled=not fileUploaded, placeholder= placeholderText, key="user_input")
+    user_query = st.chat_input(placeholder="Ask me anything!", key="user_input")
 
     if voice:
        user_query = voice
@@ -191,6 +199,11 @@ def main():
                 response = answer_query(user_query)
                 st.session_state.messages.append({"role": "assistant", "content": response})
                 st.chat_message("assistant").write(response)
+                if voiceSelection == 'Yes':
+                    with st.spinner("Processing"):
+                        text_to_speech(speech_file_path,response)
+                        st.audio(speech_file_path, format='audio/mp3')
+
 
             elif(check_internet_connection == False):st.error("Please check your internet connection!", icon="🚨")
         
