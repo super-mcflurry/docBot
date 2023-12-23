@@ -13,3 +13,4 @@ chromadb
 python-docx
 langchain_experimental
 tabulate
+replicate
