@@ -13,3 +13,5 @@ chromadb
 python-docx
 langchain_experimental
 tabulate
+openai
+pypdf
