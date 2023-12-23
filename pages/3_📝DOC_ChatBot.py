@@ -1,5 +1,6 @@
 import os
 import streamlit as st
+import requests
 from dotenv import load_dotenv
 
 from langchain.document_loaders import PyPDFLoader
@@ -21,6 +22,7 @@ from langchain.embeddings import HuggingFaceEmbeddings
 from streamlit_mic_recorder import speech_to_text
 
 docs = []
+
 
 #Extracts the text from the document
 def download_file(file):
@@ -119,11 +121,26 @@ def clear_chat_history():
     st.session_state.messages = [{"role": "assistant", "content": "How can I help you?"}]
 
 
+
+def check_internet_connection():
+    try:
+        # Try to make an HTTP request to a reliable server (e.g., Google)
+        response = requests.get("http://www.google.com", timeout=5)
+        response.raise_for_status()  # Raise an error for bad responses
+        return True
+    except requests.RequestException:
+        pass
+    return False
+
+
+
 def main():
+    fileUploaded = False
     load_dotenv()
 
     st.set_page_config(page_title="DocBot", page_icon=":robot_face:")
     st.header("📝Chat with Your Documents")
+
        
     if "conversation" not in st.session_state:
         st.session_state.conversation = None
@@ -152,6 +169,7 @@ def main():
                     vectorstore = embeddings_vectorstore(chunks)
                     st.session_state.conversation = conversation_chain(vectorstore,selected_model)
                     st.success("Done!")
+                    fileUploaded = True
        
         st.subheader("Speech to Text🎙️")    
         voice = speech_to_text(language='en', use_container_width=True, just_once=True, key='STT')
@@ -159,17 +177,22 @@ def main():
         st.sidebar.button('Clear Chat History', on_click=clear_chat_history) 
 
 
-    user_query = st.chat_input(placeholder="Ask me anything!", key="user_input")
+    #To enable and disable chat_input based on file upload
+    placeholderText = "Please upload a document and click the \"Process\" button!" if not fileUploaded else "Ask me anything!"
+    user_query = st.chat_input(disabled=not fileUploaded, placeholder= placeholderText, key="user_input")
 
     if voice:
        user_query = voice
 
     if user_query:
-       st.chat_message("user").write(user_query)
-       st.session_state.messages.append({"role": "user", "content": user_query})
-       response = answer_query(user_query)
-       st.session_state.messages.append({"role": "assistant", "content": response})
-       st.chat_message("assistant").write(response)
+            if(check_internet_connection()):
+                st.chat_message("user").write(user_query)
+                st.session_state.messages.append({"role": "user", "content": user_query})
+                response = answer_query(user_query)
+                st.session_state.messages.append({"role": "assistant", "content": response})
+                st.chat_message("assistant").write(response)
+
+            elif(check_internet_connection == False):st.error("Please check your internet connection!", icon="🚨")
         
 if __name__ == '__main__':
     main()
