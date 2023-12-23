@@ -6,6 +6,8 @@ from langchain.llms import OpenAI
 from langchain_experimental.agents.agent_toolkits import create_csv_agent
 
 from streamlit_mic_recorder import speech_to_text
+import openai
+import time 
 
 
 def answer_query(query):
@@ -15,9 +17,15 @@ def answer_query(query):
 def clear_chat_history():
     st.session_state.messages = [{"role": "assistant", "content": "How can I help you?"}]
 
+def text_to_speech(speech_file_path,text):
+    response = openai.audio.speech.create(model="tts-1-hd",voice="shimmer",input=text)
+    response.stream_to_file(speech_file_path)
 
 def main():
     load_dotenv()
+    
+    timestamp = int(time.time())
+    speech_file_path = f'audio_response_{timestamp}.mp3'
 
     st.set_page_config(page_title="DocBot", page_icon=":robot_face:")
     st.header("📊Chat with Your Data")
@@ -51,6 +59,9 @@ def main():
         st.subheader("Speech to Text🎙️")    
         voice = speech_to_text(language='en', use_container_width=True, just_once=True, key='STT')
 
+        st.subheader("Voice Output")        
+        voiceSelection = st.sidebar.selectbox('Speech Settings', ['No', 'Yes'], key='voiceSelection')    
+
         st.sidebar.button('Clear Chat History', on_click=clear_chat_history) 
         
     user_query = st.chat_input(placeholder="Ask me anything!", key="user_input")
@@ -64,9 +75,12 @@ def main():
        response = agent.run(user_query)
        st.session_state.messages.append({"role": "assistant", "content": response})
        st.chat_message("assistant").write(response)
+       if voiceSelection == 'Yes':
+                    with st.spinner("Processing"):
+                        text_to_speech(speech_file_path,response)
+                        st.audio(speech_file_path, format='audio/mp3')
+
         
 
 if __name__ == '__main__':
     main()
-
-
