@@ -12,12 +12,15 @@ def answer_query(query):
     response = st.session_state.conversation({'question': query})
     return response['answer']
 
+def clear_chat_history():
+    st.session_state.messages = [{"role": "assistant", "content": "How can I help you?"}]
+
 
 def main():
     load_dotenv()
 
-    st.set_page_config(page_title="DocBot", page_icon=":robot_face:", layout="wide")
-    st.header("Docbot - Chat with your DataSet")
+    st.set_page_config(page_title="DocBot", page_icon=":robot_face:")
+    st.header("📊Chat with Your Data")
        
     if "conversation" not in st.session_state:
         st.session_state.conversation = None
@@ -32,12 +35,6 @@ def main():
     for msg in st.session_state["messages"]:
         st.chat_message(msg["role"]).write(msg["content"])
    
-     # Display chat input
-    user_query = st.chat_input(placeholder="Ask me anything!", key="user_input")
-    text = speech_to_text(language='en', use_container_width=True, just_once=True, key='STT')
-
-    if text:
-       user_query = text
 
     with st.sidebar:
         st.subheader("Upload your Documents")
@@ -50,6 +47,16 @@ def main():
                                          agent_type=AgentType.OPENAI_FUNCTIONS,
                                          handle_parsing_errors=True
                                         )
+
+        st.subheader("Speech to Text🎙️")    
+        voice = speech_to_text(language='en', use_container_width=True, just_once=True, key='STT')
+
+        st.sidebar.button('Clear Chat History', on_click=clear_chat_history) 
+        
+    user_query = st.chat_input(placeholder="Ask me anything!", key="user_input")
+
+    if voice:
+       user_query = voice
 
     if user_query:
        st.chat_message("user").write(user_query)
