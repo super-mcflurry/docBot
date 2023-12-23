@@ -10,6 +10,7 @@ from langchain.chains import ConversationalRetrievalChain
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains import ConversationalRetrievalChain
 from langchain.vectorstores import Chroma
+from langchain.llms import GooglePalm
 
 from langchain.llms import Replicate
 from langchain.llms import OpenAI
@@ -143,21 +144,22 @@ def main():
         
         selected_model = st.sidebar.selectbox('Choose a model', ['ChatGPT-3.5', 'Gemini-Pro', 'Llama2-70B', 'FLAN-T5'], key='selected_model')      
         button = st.button("Process")
+
+        if button:
+            with st.spinner("Processing"):
+                    get_text(uploaded_files)
+                    chunks = split_text(docs)
+                    vectorstore = embeddings_vectorstore(chunks)
+                    st.session_state.conversation = conversation_chain(vectorstore,selected_model)
+                    st.success("Done!")
        
         st.subheader("Speech to Text🎙️")    
         voice = speech_to_text(language='en', use_container_width=True, just_once=True, key='STT')
 
         st.sidebar.button('Clear Chat History', on_click=clear_chat_history) 
 
+
     user_query = st.chat_input(placeholder="Ask me anything!", key="user_input")
-    
-    if button:
-            with st.spinner("Processing"):
-                get_text(uploaded_files)
-                chunks = split_text(docs)
-                vectorstore = embeddings_vectorstore(chunks)
-                st.session_state.conversation = conversation_chain(vectorstore,selected_model)
-                st.success("Done!")
 
     if voice:
        user_query = voice
@@ -171,5 +173,3 @@ def main():
         
 if __name__ == '__main__':
     main()
-
-
