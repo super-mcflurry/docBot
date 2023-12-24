@@ -56,11 +56,11 @@ def pdfReader(file_path):
 
 def docxReader(file_path):
     doc = Docx2txtLoader(file_path)
-    docs.append(doc.load())
+    docs.extend(doc.load())
 
 def txtReader(file_path):
     txt = TextLoader(file_path)
-    docs.append(txt.load())
+    docs.extend(txt.load())
 
 #Splits the text into chunks
 def split_text(file):
