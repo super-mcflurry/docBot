@@ -18,10 +18,10 @@ def conversation_chain(selected_model):
 
     memory = ConversationBufferMemory()
 
-    if selected_model == 'ChatGPT-3.5':
-        llm = ChatOpenAI(model_name="gpt-3.5-turbo-1106",temperature=0.5, streaming=True)
+    if selected_model == 'GPT4-Turbo':
+        llm = ChatOpenAI(model_name="gpt-4-1106-preview",temperature=0.5, streaming=True)
     elif selected_model == 'Gemini-Pro':
-        llm = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0.7,convert_system_message_to_human=True)
+        llm = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0.5,convert_system_message_to_human=True)
     elif selected_model == 'Llama2-70B':
         llm = Replicate(
         model = "meta/llama-2-70b-chat:02e509c789964a7ea8736978a43525956ef40397be9033abf9fd2badfe68c9e3",
@@ -60,7 +60,7 @@ def main():
 
     with st.sidebar:
         st.subheader("Select your Model")        
-        selected_model = st.sidebar.selectbox('Choose a model', ['ChatGPT-3.5', 'Gemini-Pro', 'Llama2-70B', 'FLAN-T5'], key='selected_model')      
+        selected_model = st.sidebar.selectbox('Choose a model', ['GPT4-Turbo', 'Gemini-Pro', 'Llama2-70B', 'FLAN-T5'], key='selected_model')      
 
         st.subheader("Speech to Text🎙️")    
         voice = speech_to_text(language='en', use_container_width=True, just_once=True, key='STT')
