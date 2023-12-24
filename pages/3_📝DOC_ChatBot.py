@@ -53,6 +53,7 @@ def pdfReader(file_path):
     pdf_loader = PyPDFLoader(file_path, extract_images=True)
     docs.extend(pdf_loader.load())
 
+
 def docxReader(file_path):
     doc = Docx2txtLoader(file_path)
     docs.append(doc.load())
@@ -93,9 +94,9 @@ def conversation_chain(vectorstore,selected_model):
     )
 
     if selected_model == 'ChatGPT-3.5':
-        llm = ChatOpenAI(model_name="gpt-3.5-turbo-1106",temperature=0.5, streaming=True)
+        llm = ChatOpenAI(model_name="gpt-3.5-turbo",temperature=0.5, streaming=True)
     elif selected_model == 'Gemini-Pro':
-         llm = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0.7,convert_system_message_to_human=True)
+         llm = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0.5,convert_system_message_to_human=True)
     elif selected_model == 'Llama2-70B':
         llm = Replicate(
         model = "meta/llama-2-70b-chat:02e509c789964a7ea8736978a43525956ef40397be9033abf9fd2badfe68c9e3",
