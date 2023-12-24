@@ -25,6 +25,7 @@ import time
 
 docs = []
 
+openai_api_key = os.getenv("OPENAI_API_KEY_GPT4")
 
 #Extracts the text from the document
 def download_file(file):
@@ -93,8 +94,8 @@ def conversation_chain(vectorstore,selected_model):
         search_kwargs={'k':2, 'fetch_k':4}
     )
 
-    if selected_model == 'ChatGPT-3.5':
-        llm = ChatOpenAI(model_name="gpt-3.5-turbo",temperature=0.5, streaming=True)
+    if selected_model == 'GPT-4-Turbo':
+        llm = ChatOpenAI(model_name="gpt-4-1106-preview",temperature=0.5, streaming=True)
     elif selected_model == 'Gemini-Pro':
          llm = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0.5,convert_system_message_to_human=True)
     elif selected_model == 'Llama2-70B':
@@ -143,6 +144,7 @@ def text_to_speech(speech_file_path,text):
 def main():
     load_dotenv()
 
+
     timestamp = int(time.time())
     speech_file_path = f'audio_response_{timestamp}.mp3'
 
@@ -167,7 +169,7 @@ def main():
         st.subheader("Upload your Documents")
         uploaded_files = st.file_uploader(label='Upload files', type=['pdf','docx','txt'], accept_multiple_files=True)
         
-        selected_model = st.sidebar.selectbox('Choose a model', ['ChatGPT-3.5', 'Gemini-Pro', 'Llama2-70B', 'FLAN-T5'], key='selected_model')      
+        selected_model = st.sidebar.selectbox('Choose a model', ['GPT4-Turbo', 'Gemini-Pro', 'Llama2-70B', 'FLAN-T5'], key='selected_model')      
         button = st.button("Process")
 
         if button:
