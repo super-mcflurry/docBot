@@ -49,7 +49,7 @@ def main():
         csv_files = st.file_uploader(label='Upload CSV files', type=['csv'], accept_multiple_files=True)
         
         if csv_files:
-                agent = create_csv_agent(ChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613"),
+                agent = create_csv_agent(ChatOpenAI(temperature=0, model="gpt-4-1106-preview"),
                                          csv_files,
                                          verbose=True,
                                          agent_type=AgentType.OPENAI_FUNCTIONS,
