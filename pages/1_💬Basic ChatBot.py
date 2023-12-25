@@ -1,7 +1,6 @@
 import streamlit as st
 from dotenv import load_dotenv
 
-from langchain.llms import OpenAI
 from langchain_community.chat_models import ChatOpenAI
 from langchain.llms import HuggingFaceHub
 from langchain.llms import Replicate
