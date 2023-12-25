@@ -11,7 +11,11 @@ import time
 
 
 def answer_query(query):
+    start_time = time.time()
     response = st.session_state.conversation({"question": query})
+    end_time = time.time()
+    response_time = end_time - start_time
+    print(f"Response Time: {response_time:.2f} seconds\n")
     return response["answer"]
 
 
