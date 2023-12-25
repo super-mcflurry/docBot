@@ -114,7 +114,11 @@ def main():
     if user_query:
         st.chat_message("user").write(user_query)
         st.session_state.messages.append({"role": "user", "content": user_query})
+        start_time = time.time()
         response = chain.run(user_query)
+        end_time = time.time()
+        response_time = end_time - start_time
+        print(f"Response Time: {response_time:.2f} seconds\n")
         st.session_state.messages.append({"role": "assistant", "content": response})
         st.chat_message("assistant").write(response)
         if voiceSelection == "Yes":
