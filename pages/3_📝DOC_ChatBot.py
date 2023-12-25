@@ -11,7 +11,6 @@ from langchain.chains import ConversationalRetrievalChain
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains import ConversationalRetrievalChain
 from langchain.vectorstores import Chroma
-from langchain.llms import GooglePalm
 
 from langchain.llms import Replicate
 from langchain.chat_models import ChatOpenAI
@@ -24,9 +23,6 @@ import openai
 import time
 
 docs = []
-
-openai_api_key = os.getenv("OPENAI_API_KEY_GPT4")
-
 
 # Extracts the text from the document
 def download_file(file):
