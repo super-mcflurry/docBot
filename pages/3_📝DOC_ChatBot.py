@@ -94,6 +94,10 @@ def conversation_chain(vectorstore, selected_model):
         llm = ChatOpenAI(
             model_name="gpt-3.5-turbo-1106", temperature=0.5, streaming=True
         )
+    elif selected_model == "GPT-4":
+         llm = ChatOpenAI(
+            model_name="gpt-4-1106-preview", temperature=0.5, streaming=True
+        )
     elif selected_model == "Gemini-Pro":
         llm = ChatGoogleGenerativeAI(
             model="gemini-pro", temperature=0.5, convert_system_message_to_human=True
@@ -188,7 +192,7 @@ def main():
 
         selected_model = st.sidebar.selectbox(
             "Choose a model",
-            ["GPT3.5-Turbo", "Gemini-Pro", "Llama2-70B", "FLAN-T5"],
+            ["GPT3.5-Turbo","GPT-4" "Gemini-Pro", "Llama2-70B", "FLAN-T5"],
             key="selected_model",
         )
         button = st.button("Process")
