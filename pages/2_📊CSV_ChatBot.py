@@ -61,7 +61,7 @@ def main():
 
         if csv_files:
             agent = create_csv_agent(
-                ChatOpenAI(temperature=0, model="gpt-3.5-turbo-1106"),
+                ChatOpenAI(temperature=0, model="gpt-4-1106-preview"),
                 csv_files,
                 verbose=True,
                 agent_type=AgentType.OPENAI_FUNCTIONS,
