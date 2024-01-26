@@ -23,7 +23,7 @@ def conversation_chain(selected_model):
         )
     elif selected_model == "GPT-4":
          llm = ChatOpenAI(
-            model_name="gpt-4-1106-preview", temperature=0.5, streaming=True
+            model_name="gpt-4", temperature=0.5, streaming=True
         )
     elif selected_model == "Gemini-Pro":
         llm = ChatGoogleGenerativeAI(
