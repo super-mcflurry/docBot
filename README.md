@@ -41,7 +41,7 @@ Fine-tuning on domain-specific datasets for improved accuracy.
 ### Sample Screenshot
 > Interface design for the chatbot system
 ![Interface](images/interface.png)</br></br>
-> Sidebar design for the chatbot system
+> Sidebar design for the chatbot system that able to let users upload their files and choose their favourite model
 ![Sidebar_design](images/sidebar_design.png)</br></br>
 > Sample Q&A with the chatbot
 ![sample1](images/sample1.png)</br></br>
