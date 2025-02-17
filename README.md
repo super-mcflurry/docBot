@@ -13,4 +13,39 @@ Leveraging Large Language Models (LLMs) like GPT-3.5 Turbo, Llama2, and Gemini-P
 Backend: LangChain, OpenAI GPT-3.5 Turbo, Llama2, Gemini-Pro</br>
 Frontend: Streamlit (for UI interaction)</br>
 Database: Vector Database for efficient text retrieval</br>
-Cloud Services: OpenAI API for LLM integration</br>
+Cloud Services: OpenAI API for LLM integration
+
+
+### System Workflow
+1.User Uploads a Document → Supports PDF, DOCX, TXT</br>
+2.Text Extraction → Extracts content and prepares it for processing</br>
+3.Text Chunking & Embedding → Splits document content and converts text into vectorized embeddings</br>
+4.Vector Database Storage → ChromaDB stores processed text for fast retrieval</br>
+5.User Queries the Chatbot → User asks questions related to the document</br>
+6.LLM Processing → Gemini-Pro generates context-aware responses</br>
+7.Response Display → Chatbot presents an intelligent answer based on document content
+
+
+### Limitations
+Model Dependency: The chatbot's effectiveness depends on the training data of the LLM.</br>
+Internet Connection: Requires a stable internet connection for optimal performance.</br>
+Limited Knowledge Updates: Periodic updates are needed to improve document comprehension.
+
+
+### Future Enhancements
+Support for more document formats (Excel, JSON, Markdown).</br>
+Integration with database storage for persistent document retrieval.</br>
+Improved multi-document handling for better context awareness.</br>
+Fine-tuning on domain-specific datasets for improved accuracy.
+
+### Sample Screenshot
+> Interface design for the chatbot system
+![Interface](images/interface.png)</br></br>
+> Sidebar design for the chatbot system
+![Sidebar_design](images/sidebar_design.png)</br></br>
+> Sample Q&A with the chatbot
+![sample1](images/sample1.png)</br></br>
+> Sample Q&A with the chatbot
+![sample2](images/sample2.png)</br></br>
+> Sample Q&A with the chatbot
+![sample3](images/sample3.png)</br></br>
